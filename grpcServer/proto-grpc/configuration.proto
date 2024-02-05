@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "/grpcServer/proto-grpc/configuration.proto";
+
+package configuration.proto;
+
+service getInfo {
+    rpc returnInfo (requestId) returns (replyInfo){}
+
+}
+
+message requestId {
+    string id = 1;
+}
+message replyInfo{
+    string info = 1;
+}
