@@ -2,8 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
+	pb "grpcserver/grpcServer/proto-grpc"
 	"log"
+	"net"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
 )
 
@@ -15,16 +22,51 @@ type server struct {
 	pb.UnimplementedGetInfoServer
 }
 
-func main() {
-	conn, err := grpc.Dial("localhost:50052", grpc.WithInsecure())
+func save_comments(comment string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	mongoclient, err := mongo.Connect(ctx, options.Client().ApplyURI("momgo uri"))
 	if err != nil {
-		log.Fatalf("could not connect to mongoDB server: %v", err)
-	}
-	client := protobuf.NewMongoDBClient(conn)
-	ctx := context.Background()
-	db, err := client.GetDB(ctx, &protobuf.Empty{})
-	if err != nil {
-		log.Fatalf("error getting DB from server: %v", err)
+		log.Fatal(err)
 	}
 
+	databases, err := mongoclient.ListDatabaseNames(ctx, bson.M{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(databases)
+
+	Database := mongoclient.Database("testGRPC")
+	Collection := Database.Collection("comments")
+
+	var bdoc interface{}
+
+	errb := bson.UnmarshalExtJSON([]byte(comment), true, &bdoc)
+	fmt.Println(errb)
+
+	insertResult, err := Collection.InsertOne(ctx, bdoc)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(insertResult)
+}
+
+func (s *server) ReturnInfo(ctx context.Context, in *pb.RequestId) (*pb.ReplyInfo, error) {
+	save_comments(in.GetId())
+	fmt.Printf(">> We have obtaind the data client: %n", in.GetId())
+	return &pb.ReplyInfo{Info: ">> Hi! thanks for you comment: " + in.GetId()}, nil
+}
+
+func main() {
+	hear, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatal("We can't do start the server: %v", err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterGetInfoServer(s, &server{})
+	if err := s.Serve(hear); err != nil {
+		log.Fatal("We can't do start the server: %v", err)
+	}
 }
