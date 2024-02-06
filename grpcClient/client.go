@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	pb "grpcClient/proto-grpc/grpcServer"
+	pb "grpcclient/grpcClient/proto-grpc"
 	"io"
 	"log"
 	"net/http"
