@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	pb "grpcserver/grpcServer/proto-grpc"
 	"log"
 	"net"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
+
+	pb "grpcserver/grpcServer/proto-grpc"
 )
 
 const (
@@ -69,4 +70,6 @@ func main() {
 	if err := s.Serve(hear); err != nil {
 		log.Fatal("We can't do start the server: %v", err)
 	}
+	fmt.Println(port + " is listening...")
+
 }
